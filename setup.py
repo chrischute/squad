@@ -57,19 +57,18 @@ def download(args):
     for name, url in downloads:
         output_path = url_to_data_path(url)
         if not os.path.exists(output_path):
-            print('Downloading {}...'.format(name))
+            print(f'Downloading {name}...')
             download_url(url, output_path)
 
         if os.path.exists(output_path) and output_path.endswith('.zip'):
             extracted_path = output_path.replace('.zip', '')
             if not os.path.exists(extracted_path):
-                print('Unzipping {}...'.format(name))
+                print(f'Unzipping {name}...')
                 with ZipFile(output_path, 'r') as zip_fh:
                     zip_fh.extractall(extracted_path)
 
     print('Downloading spacy language model...')
     run(['python', '-m', 'spacy', 'download', 'en'])
-
 
 def word_tokenize(sent):
     doc = nlp(sent)
@@ -82,7 +81,7 @@ def convert_idx(text, tokens):
     for token in tokens:
         current = text.find(token, current)
         if current < 0:
-            print("Token {} cannot be found".format(token))
+            print(f"Token {token} cannot be found")
             raise Exception()
         spans.append((current, current + len(token)))
         current += len(token)
@@ -90,7 +89,7 @@ def convert_idx(text, tokens):
 
 
 def process_file(filename, data_type, word_counter, char_counter):
-    print("Pre-processing {} examples...".format(data_type))
+    print(f"Pre-processing {data_type} examples...")
     examples = []
     eval_examples = {}
     total = 0
@@ -144,12 +143,12 @@ def process_file(filename, data_type, word_counter, char_counter):
                                                  "spans": spans,
                                                  "answers": answer_texts,
                                                  "uuid": qa["id"]}
-        print("{} questions in total".format(len(examples)))
+        print(f"{len(examples)} questions in total")
     return examples, eval_examples
 
 
 def get_embedding(counter, data_type, limit=-1, emb_file=None, vec_size=None, num_vectors=None):
-    print("Pre-processing {} vectors...".format(data_type))
+    print(f"Pre-processing {data_type} vectors...")
     embedding_dict = {}
     filtered_elements = [k for k, v in counter.items() if v > limit]
     if emb_file is not None:
@@ -161,15 +160,13 @@ def get_embedding(counter, data_type, limit=-1, emb_file=None, vec_size=None, nu
                 vector = list(map(float, array[-vec_size:]))
                 if word in counter and counter[word] > limit:
                     embedding_dict[word] = vector
-        print("{} / {} tokens have corresponding {} embedding vector".format(
-            len(embedding_dict), len(filtered_elements), data_type))
+        print(f"{len(embedding_dict)} / {len(filtered_elements)} tokens have corresponding {data_type} embedding vector")
     else:
         assert vec_size is not None
         for token in filtered_elements:
             embedding_dict[token] = [np.random.normal(
                 scale=0.1) for _ in range(vec_size)]
-        print("{} tokens have corresponding {} embedding vector".format(
-            len(filtered_elements), data_type))
+        print(f"{len(filtered_elements)} tokens have corresponding {data_type} embedding vector")
 
     NULL = "--NULL--"
     OOV = "--OOV--"
@@ -263,7 +260,7 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
 
         return drop
 
-    print("Converting {} examples to indices...".format(data_type))
+    print(f"Converting {data_type} examples to indices...")
     total = 0
     total_ = 0
     meta = {}
@@ -337,14 +334,14 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
              y1s=np.array(y1s),
              y2s=np.array(y2s),
              ids=np.array(ids))
-    print("Built {} / {} instances of features in total".format(total, total_))
+    print(f"Built {total} / {total_} instances of features in total")
     meta["total"] = total
     return meta
 
 
 def save(filename, obj, message=None):
     if message is not None:
-        print("Saving {}...".format(message))
+        print(f"Saving {message}...")
         with open(filename, "w") as fh:
             json.dump(obj, fh)
 
@@ -394,6 +391,6 @@ if __name__ == '__main__':
     if args_.include_test_examples:
         args_.test_file = url_to_data_path(args_.test_url)
     glove_dir = url_to_data_path(args_.glove_url.replace('.zip', ''))
-    glove_ext = '.txt' if glove_dir.endswith('d') else '.{}d.txt'.format(args_.glove_dim)
+    glove_ext = f'.txt' if glove_dir.endswith('d') else f'.{args_.glove_dim}d.txt'
     args_.glove_file = os.path.join(glove_dir, os.path.basename(glove_dir) + glove_ext)
     pre_process(args_)

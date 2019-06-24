@@ -144,8 +144,7 @@ def get_train_args():
         # Best checkpoint is the one that maximizes EM or F1
         args.maximize_metric = True
     else:
-        raise ValueError('Unrecognized metric name: "{}"'
-                         .format(args.metric_name))
+        raise ValueError(f'Unrecognized metric name: "{args.metric_name}"')
 
     return args
 

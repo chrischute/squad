@@ -248,8 +248,7 @@ class CheckpointSaver:
         self.best_val = None
         self.ckpt_paths = queue.PriorityQueue()
         self.log = log
-        self._print('Saver will {}imize {}...'
-                    .format('max' if maximize_metric else 'min', metric_name))
+        self._print(f'Saver will {'max' if maximize_metric else 'min'}imize {metric_name}...')
 
     def is_best(self, metric_val):
         """Check whether `metric_val` is the best seen so far.
@@ -290,16 +289,16 @@ class CheckpointSaver:
         model.to(device)
 
         checkpoint_path = os.path.join(self.save_dir,
-                                       'step_{}.pth.tar'.format(step))
+                                       f'step_{step}.pth.tar')
         torch.save(ckpt_dict, checkpoint_path)
-        self._print('Saved checkpoint: {}'.format(checkpoint_path))
+        self._print(f'Saved checkpoint: {checkpoint_path}')
 
         if self.is_best(metric_val):
             # Save the best model
             self.best_val = metric_val
             best_path = os.path.join(self.save_dir, 'best.pth.tar')
             shutil.copy(checkpoint_path, best_path)
-            self._print('New best checkpoint at step {}...'.format(step))
+            self._print(f'New best checkpoint at step {step}...')
 
         # Add checkpoint path to priority queue (lowest priority removed first)
         if self.maximize_metric:
@@ -314,7 +313,7 @@ class CheckpointSaver:
             _, worst_ckpt = self.ckpt_paths.get()
             try:
                 os.remove(worst_ckpt)
-                self._print('Removed checkpoint: {}'.format(worst_ckpt))
+                self._print(f'Removed checkpoint: {worst_ckpt}')
             except OSError:
                 # Avoid crashing if checkpoint has been removed or protected
                 pass
@@ -333,7 +332,7 @@ def load_model(model, checkpoint_path, gpu_ids, return_step=True):
         model (torch.nn.DataParallel): Model loaded from checkpoint.
         step (int): Step at which checkpoint was saved. Only if `return_step`.
     """
-    device = 'cuda:{}'.format(gpu_ids[0]) if gpu_ids else 'cpu'
+    device = f'cuda:{gpu_ids[0]) if gpu_ids else 'cpu'}'
     ckpt_dict = torch.load(checkpoint_path, map_location=device)
 
     # Build model, load parameters
@@ -356,7 +355,7 @@ def get_available_devices():
     gpu_ids = []
     if torch.cuda.is_available():
         gpu_ids += [gpu_id for gpu_id in range(torch.cuda.device_count())]
-        device = torch.device('cuda:{}'.format(gpu_ids[0]))
+        device = torch.device(f'cuda:{gpu_ids[0]}')
         torch.cuda.set_device(device)
     else:
         device = torch.device('cpu')
@@ -415,12 +414,12 @@ def visualize(tbx, pred_dict, eval_path, step, split, num_visuals):
         answers = example['answers']
 
         gold = answers[0] if answers else 'N/A'
-        tbl_fmt = ('- **Question:** {}\n'
-                   + '- **Context:** {}\n'
-                   + '- **Answer:** {}\n'
-                   + '- **Prediction:** {}')
-        tbx.add_text(tag='{}/{}_of_{}'.format(split, i + 1, num_visuals),
-                     text_string=tbl_fmt.format(question, context, gold, pred),
+        tbl_fmt = (f'- **Question:** {question}\n'
+                   + f'- **Context:** {context}\n'
+                   + f'- **Answer:** {gold}\n'
+                   + f'- **Prediction:** {pred}')
+        tbx.add_text(tag=f'{split}/{i+1}_of_{num_visuals}',
+                     text_string=tbl_fmt,
                      global_step=step)
 
 
@@ -466,7 +465,7 @@ def get_save_dir(base_dir, name, training, id_max=100):
     """
     for uid in range(1, id_max):
         subdir = 'train' if training else 'test'
-        save_dir = os.path.join(base_dir, subdir, '{}-{:02d}'.format(name, uid))
+        save_dir = os.path.join(base_dir, subdir, f'{name}-{uid:02d}')
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
             return save_dir

@@ -33,7 +33,7 @@ def main(args):
     # Set up logging
     args.save_dir = util.get_save_dir(args.save_dir, args.name, training=False)
     log = util.get_logger(args.save_dir, args.name)
-    log.info('Args: {}'.format(dumps(vars(args), indent=4, sort_keys=True)))
+    log.info(f'Args: {dumps(vars(args), indent=4, sort_keys=True)}')
     device, gpu_ids = util.get_available_devices()
     args.batch_size *= max(1, len(gpu_ids))
 
@@ -46,14 +46,14 @@ def main(args):
     model = BiDAF(word_vectors=word_vectors,
                   hidden_size=args.hidden_size)
     model = nn.DataParallel(model, gpu_ids)
-    log.info('Loading checkpoint from {}...'.format(args.load_path))
+    log.info(f'Loading checkpoint from {args.load_path}...')
     model = util.load_model(model, args.load_path, gpu_ids, return_step=False)
     model = model.to(device)
     model.eval()
 
     # Get data loader
     log.info('Building dataset...')
-    record_file = vars(args)['{}_record_file'.format(args.split)]
+    record_file = vars(args)[f'{args.split}_record_file']
     dataset = SQuAD(record_file, args.use_squad_v2)
     data_loader = data.DataLoader(dataset,
                                   batch_size=args.batch_size,
@@ -62,11 +62,11 @@ def main(args):
                                   collate_fn=collate_fn)
 
     # Evaluate
-    log.info('Evaluating on {} split...'.format(args.split))
+    log.info(f'Evaluating on {args.split} split...')
     nll_meter = util.AverageMeter()
     pred_dict = {}  # Predictions for TensorBoard
     sub_dict = {}   # Predictions for submission
-    eval_file = vars(args)['{}_eval_file'.format(args.split)]
+    eval_file = vars(args)[f'{args.split}_eval_file']
     with open(eval_file, 'r') as fh:
         gold_dict = json_load(fh)
     with torch.no_grad(), \
@@ -112,9 +112,8 @@ def main(args):
         results = OrderedDict(results_list)
 
         # Log to console
-        results_str = ', '.join('{}: {:05.2f}'.format(k, v)
-                                for k, v in results.items())
-        log.info('{} {}'.format(args.split.title(), results_str))
+        results_str = ', '.join(f'{k}: {v:05.2f}' for k, v in results.items())
+        log.info(f'{args.split.title()} {results_str}')
 
         # Log to TensorBoard
         tbx = SummaryWriter(args.save_dir)
@@ -127,7 +126,7 @@ def main(args):
 
     # Write submission file
     sub_path = join(args.save_dir, args.split + '_' + args.sub_file)
-    log.info('Writing submission file to {}...'.format(sub_path))
+    log.info(f'Writing submission file to {sub_path}...')
     with open(sub_path, 'w', newline='', encoding='utf-8') as csv_fh:
         csv_writer = csv.writer(csv_fh, delimiter=',')
         csv_writer.writerow(['Id', 'Predicted'])

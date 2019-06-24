@@ -30,11 +30,11 @@ def main(args):
     log = util.get_logger(args.save_dir, args.name)
     tbx = SummaryWriter(args.save_dir)
     device, args.gpu_ids = util.get_available_devices()
-    log.info('Args: {}'.format(dumps(vars(args), indent=4, sort_keys=True)))
+    log.info(f'Args: {dumps(vars(args), indent=4, sort_keys=True)}')
     args.batch_size *= max(1, len(args.gpu_ids))
 
     # Set random seed
-    log.info('Using random seed {}...'.format(args.seed))
+    log.info(f'Using random seed {args.seed}...')
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -51,7 +51,7 @@ def main(args):
                   drop_prob=args.drop_prob)
     model = nn.DataParallel(model, args.gpu_ids)
     if args.load_path:
-        log.info('Loading checkpoint from {}...'.format(args.load_path))
+        log.info(f'Loading checkpoint from {args.load_path}...')
         model, step = util.load_model(model, args.load_path, args.gpu_ids)
     else:
         step = 0
@@ -92,7 +92,7 @@ def main(args):
     epoch = step // len(train_dataset)
     while epoch != args.num_epochs:
         epoch += 1
-        log.info('Starting epoch {}...'.format(epoch))
+        log.info(f'Starting epoch {epoch}...')
         with torch.enable_grad(), \
                 tqdm(total=len(train_loader.dataset)) as progress_bar:
             for cw_idxs, cc_idxs, qw_idxs, qc_idxs, y1, y2, ids in train_loader:
@@ -130,7 +130,7 @@ def main(args):
                     steps_till_eval = args.eval_steps
 
                     # Evaluate and save checkpoint
-                    log.info('Evaluating at step {}...'.format(step))
+                    log.info(f'Evaluating at step {step}...')
                     ema.assign(model)
                     results, pred_dict = evaluate(model, dev_loader, device,
                                                   args.dev_eval_file,
@@ -140,14 +140,13 @@ def main(args):
                     ema.resume(model)
 
                     # Log to console
-                    results_str = ', '.join('{}: {:05.2f}'.format(k, v)
-                                            for k, v in results.items())
-                    log.info('Dev {}'.format(results_str))
+                    results_str = ', '.join(f'{k}: {v:05.2f}' for k, v in results.items())
+                    log.info(f'Dev {results_str}')
 
                     # Log to TensorBoard
                     log.info('Visualizing in TensorBoard...')
                     for k, v in results.items():
-                        tbx.add_scalar('dev/{}'.format(k), v, step)
+                        tbx.add_scalar(f'dev/{k}', v, step)
                     util.visualize(tbx,
                                    pred_dict=pred_dict,
                                    eval_path=args.dev_eval_file,
